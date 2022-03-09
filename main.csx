@@ -18,8 +18,14 @@ using System.Text;
 var client = new Client();
 var server = new Server(client.PublicKey);
 client.DeriveKeyMaterial(server.PublicKey);
-client.Send("Hello World", out var encryptedMessage, out var iv);
-server.Receive(encryptedMessage, iv);
+
+client.Send("Secrit Message for Server", out var encryptedMessage, out var iv);
+var message = server.Receive(encryptedMessage, iv);
+Console.WriteLine(message);
+
+server.Send("Secrit Response to Client", out encryptedMessage, out iv);
+message = client.Receive(encryptedMessage, iv);
+Console.WriteLine(message);
 
 // End of script.
 
@@ -79,6 +85,23 @@ public class Client
       }
     }
   }
+
+  public string Receive(byte[] encryptedMessage, byte[] iv)
+  {
+    using (var aes = Aes.Create())
+    {
+      aes.Key = clientKey;
+      aes.IV = iv;
+      using (var plainText = new MemoryStream())
+      using (var cs = new CryptoStream(plainText, aes.CreateDecryptor(), CryptoStreamMode.Write))
+      {
+        cs.Write(encryptedMessage, 0, encryptedMessage.Length);
+        cs.Close();
+        string message = Encoding.UTF8.GetString(plainText.ToArray());
+        return message;
+      }
+    }
+  }
 }
 
 public class Server
@@ -120,7 +143,25 @@ public class Server
     serverKey = ECDH.DeriveKeyMaterial(publicKey);
   }
 
-  public void Receive(byte[] encryptedMessage, byte[] iv)
+  public void Send(string message, out byte[] encryptedMessage, out byte[] iv)
+  {
+    using (var aes = Aes.Create())
+    {
+      aes.Key = serverKey;
+      iv = aes.IV;
+
+      using (var cipherText = new MemoryStream())
+      using (CryptoStream cs = new CryptoStream(cipherText, aes.CreateEncryptor(), CryptoStreamMode.Write))
+      {
+        byte[] plaintextMessage = Encoding.UTF8.GetBytes(message);
+        cs.Write(plaintextMessage, 0, plaintextMessage.Length);
+        cs.Close();
+        encryptedMessage = cipherText.ToArray();
+      }
+    }
+  }
+
+  public string Receive(byte[] encryptedMessage, byte[] iv)
   {
     using (var aes = Aes.Create())
     {
@@ -132,7 +173,7 @@ public class Server
         cs.Write(encryptedMessage, 0, encryptedMessage.Length);
         cs.Close();
         string message = Encoding.UTF8.GetString(plainText.ToArray());
-        Console.WriteLine(message);
+        return message;
       }
     }
   }
