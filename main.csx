@@ -1,8 +1,9 @@
 #!/usr/bin/env dotnet-script
 /*
-This script requires OpenSSL to be installed and the 
-libcrypto.dylib and libssl.dylib to be accessable vai
-the PATH environment variable.
+This script requires OpenSSL to be installed on the system.
+MacOS: brew install openssl
+       libcrypto.dylib and libssl.dylib need to be accessable vai
+       the PATH environment variable.
 Example: 
 sudo ln -Fs /usr/local/opt/openssl/lib/libcrypto.dylib /usr/local/lib
 */
