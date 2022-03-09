@@ -15,12 +15,20 @@ using System.Text;
 
 // This is the actual key exchange and message passing code.
 
+// Client create key pair.
 var client = new Client();
+
+// Fist exchange: Client -> Server.
+// Server create key pair and derives shared secret key from client's public key
 var server = new Server(client.PublicKey);
+
+// Second exchange: Server -> Client.
+// Client derives shared secret key from server's public key
 client.DeriveKeyMaterial(server.PublicKey);
+var message = "";
 
 client.Send("Secrit Message for Server", out var encryptedMessage, out var iv);
-var message = server.Receive(encryptedMessage, iv);
+message = server.Receive(encryptedMessage, iv);
 Console.WriteLine(message);
 
 server.Send("Secrit Response to Client", out encryptedMessage, out iv);
